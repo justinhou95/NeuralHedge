@@ -9,7 +9,9 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from tqdm import tqdm  # type: ignore
 
-from .loss import EntropicRiskMeasure
+from abc import ABC, abstractmethod
+
+from .loss import EntropicRiskMeasure, proportional_cost, no_cost
 
 
 
@@ -34,8 +36,23 @@ class MarketDataset(Dataset):
     def __getitem__(self, idx: int):
         return [self.prices[idx], self.information[idx], self.payoff[idx]]
 
+class HedgerBase(Module, ABC):
 
-class Hedger(Module):
+    @abstractmethod
+    def compute_cost():
+        pass
+    @abstractmethod
+    def compute_hedge():
+        pass
+    @abstractmethod
+    def compute_pnl():
+        pass
+    @abstractmethod
+    def compute_loss():
+        pass
+
+
+class Hedger(HedgerBase):
 
     """Hedger to hedge with only data generated but not the generating class
     Args:
@@ -49,7 +66,8 @@ class Hedger(Module):
         self.model = model
 
     def forward(self, input: List[Tensor]) -> Tensor:
-        # TODO(songyan): 1. cost configuration  2. state_information configuration 3.path dependent payoff
+        # TODO(songyan): 1. cost configuration  2. state_information configuration
+
         """Compute the terminal wealth
 
         Args:
@@ -68,22 +86,22 @@ class Hedger(Module):
             V_T: torch.Tensor
         """
 
-        prices, information, payoff = input
-        n_step = int(prices.shape[1]) - 1
-
+        prices, information, payoff = input 
         wealth = torch.zeros_like(prices[:, 0, :])
         holding = torch.zeros_like(prices)
-        for t in range(n_step):
+        for t in range(self.n_step):
             state_information = holding[:,t,:]
-            all_information = torch.cat([information[:, t, :], state_information], dim=-1)
+            all_information = torch.cat(
+                [information[:, t, :], state_information], 
+                dim=-1)
             holding[:,t+1,:] = self.compute_hedge(all_information, t)
-            cost = self.compute_cost(holding, prices, t)
-            wealth = wealth + holding[:,t+1,:] * (prices[:,t+1,:] - prices[:,t,:])
-        wealth = torch.sum(wealth, dim=-1, keepdim=False)
+            cost = self.compute_cost(holding[:,t+1,:] - holding[:,t,:], prices[:,t,:])
+            wealth = wealth + holding[:,t+1,:] * (prices[:,t+1,:] - prices[:,t,:]) - cost
+        wealth = torch.sum(wealth, dim=-1, keepdim=True)
         return wealth
-    def compute_cost(self, holding, prices, t) -> Tensor:
-        # cost = 0.01 * torch.abs(holding[:,t+1,:] - holding[:,t,:]) * prices[:,t,:]
-        cost = 0.
+        
+    def compute_cost(self, holding_diff, price_now) -> Tensor:
+        cost = self.cost_functional(holding_diff, price_now)
         return cost
     def compute_hedge(self, all_information: Tensor, t = None) -> Tensor:
         holding = self.model(all_information)
@@ -100,11 +118,14 @@ class Hedger(Module):
     def fit(
         self, dataset_market: MarketDataset,
         criterion: Module = EntropicRiskMeasure(),
+        cost_functional = no_cost,
         EPOCHS=100, batch_size=256, 
         optimizer=torch.optim.Adam, lr=0.005
         ):
         self.dataset_market = dataset_market
+        self.n_step = int(self.dataset_market.prices.shape[1]) - 1  
         self.criterion = criterion
+        self.cost_functional = cost_functional
 
         self.dataloader_market = DataLoader(
             self.dataset_market, batch_size=batch_size, shuffle=True, num_workers=0
@@ -128,14 +149,15 @@ class Hedger(Module):
     def pricer(self) -> Tensor:
         if not hasattr(self, "pnl"):
             self.pnl = self.compute_pnl(self.dataset_market.data)
-        self.price = -self.criterion.cash(self.pnl)
+        self.price = self.criterion.cash(self.pnl)
         return self.price
 
 
-class DeepHedger(Hedger):
+class DeepHedger(HedgerBase):
     def __init__(self,models: List,):
         super().__init__(None)
         self.models = ModuleList(models)
+
     def compute_hedge(self, all_information: Tensor, t = None) -> Tensor:
         holding = self.models[t](all_information)
         return holding
