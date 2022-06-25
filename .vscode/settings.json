@@ -1,4 +1,7 @@
 {
     "notebook.output.textLineLimit": 500,
-    "notebook.outputLineHeight": 22
+    "notebook.outputLineHeight": 22,
+    "cSpell.words": [
+        "neuralhedge"
+    ]
 }

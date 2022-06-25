@@ -48,6 +48,27 @@ class EntropicRiskMeasure(LossMeasure):
         return (-exp_utility(input - input.min(), a=self.a).mean(0) * self.a).log() / self.a - input.min()
 
 
+class SquareMeasure(LossMeasure):
+    @property
+    def a(self):
+        return self._a
+    
+    def __init__(self, a: float = 1.0) -> None:
+        super().__init__()
+        self._a = a
+
+    def forward(self, input: Tensor) -> Tensor:
+        """
+        f(X) = Var(X)/2 - E[X]
+        """
+        return input.var()/2 - input.mean()
+
+    def cash(self, input: Tensor) -> Tensor:
+        """
+        f(X) = -E[X]
+        """
+        return -input.mean()
+
 
 def proportional_cost(holding_diff, price_now) -> Tensor:
     cost = 0.001 * torch.abs(holding_diff) * price_now
