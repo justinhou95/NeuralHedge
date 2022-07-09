@@ -12,7 +12,7 @@ from tqdm import tqdm  # type: ignore
 from abc import ABC, abstractmethod
 
 from .loss import EntropicRiskMeasure, proportional_cost, no_cost
-
+from neuralhedge._utils.plotting import plot_pnl, plot_history
 
 
 class MarketDataset(Dataset):
@@ -26,7 +26,6 @@ class MarketDataset(Dataset):
     """
 
     def __init__(self, data: List[Tensor]):
-        # TODO(songyan): more general payoff (path dependent)
         self.data = data
         self.prices, self.information, self.payoff = data
 
@@ -45,10 +44,10 @@ class HedgerBase(Module, ABC):
     def compute_hedge():
         pass
     @abstractmethod
-    def compute_pnl():
+    def compute_loss():
         pass
     @abstractmethod
-    def compute_loss():
+    def compute_pnl():
         pass
 
 
@@ -66,7 +65,6 @@ class Hedger(HedgerBase):
         self.model = model
 
     def forward(self, input: List[Tensor]) -> Tensor:
-        # TODO(songyan): 1. cost configuration  2. state_information configuration
 
         """Compute the terminal wealth
 
@@ -85,9 +83,8 @@ class Hedger(HedgerBase):
         Returns:
             V_T: torch.Tensor
         """
-
         prices, information, payoff = input 
-        wealth = torch.zeros_like(prices[:, 0, :])
+        wealth = torch.zeros_like(prices)
         holding = torch.zeros_like(prices)
         for t in range(self.n_step):
             state_information = holding[:,t,:]
@@ -96,43 +93,52 @@ class Hedger(HedgerBase):
                 dim=-1)
             holding[:,t+1,:] = self.compute_hedge(all_information, t)
             cost = self.compute_cost(holding[:,t+1,:] - holding[:,t,:], prices[:,t,:])
-            wealth = wealth + holding[:,t+1,:] * (prices[:,t+1,:] - prices[:,t,:]) - cost
+            wealth[:,t+1,:] = wealth[:,t,:] + holding[:,t+1,:] * (prices[:,t+1,:] - prices[:,t,:]) - cost
+
         wealth = torch.sum(wealth, dim=-1, keepdim=True)
         return wealth
         
     def compute_cost(self, holding_diff, price_now) -> Tensor:
         cost = self.cost_functional(holding_diff, price_now)
+        cost = 0.
         return cost
+
     def compute_hedge(self, all_information: Tensor, t = None) -> Tensor:
         holding = self.model(all_information)
         return holding
-    def compute_pnl(self, input: List[Tensor]) -> Tensor:
+
+    def compute_pnl(self, input: List[Tensor]):
         prices, information, payoff = input
-        wealth = self(input)
+        wealth= self(input)
         pnl = wealth - payoff
         return pnl
+
     def compute_loss(self, input: List[Tensor]):
-        loss = self.criterion(self.compute_pnl(input))
-        return loss
+        pnl = self.compute_pnl(input)
+        return self.criterion(pnl)
+        # TODO: make it clean here
+        
 
     def fit(
         self, dataset_market: MarketDataset,
         criterion: Module = EntropicRiskMeasure(),
         cost_functional = no_cost,
         EPOCHS=100, batch_size=256, 
-        optimizer=torch.optim.Adam, lr=0.005
+        optimizer=torch.optim.Adam, 
+        lr=0.001,
         ):
+
         self.dataset_market = dataset_market
+        self.n_paths = int(self.dataset_market.prices.shape[0]) 
         self.n_step = int(self.dataset_market.prices.shape[1]) - 1  
         self.criterion = criterion
         self.cost_functional = cost_functional
 
         self.dataloader_market = DataLoader(
-            self.dataset_market, batch_size=batch_size, shuffle=True, num_workers=0
-        )
+            self.dataset_market, batch_size=batch_size, shuffle=True, num_workers=0)
 
-        self.optimizer = optimizer(self.parameters(), lr=lr)
-        history = []
+        self.optimizer = optimizer(self.parameters(),lr = lr)
+        self.history = []
         progress = tqdm(range(EPOCHS))
         for _ in progress:
             self.train(True)
@@ -141,16 +147,16 @@ class Hedger(HedgerBase):
                 loss = self.compute_loss(data)
                 loss.backward()
                 self.optimizer.step()
-                history.append(loss.item())
+                self.history.append(loss.item())
                 progress.desc = "Loss=" + str(loss.item())
 
-        return history
+        return self.history
 
-    def pricer(self) -> Tensor:
-        if not hasattr(self, "pnl"):
-            self.pnl = self.compute_pnl(self.dataset_market.data)
+    def pricer(self, data) -> Tensor:
+        self.pnl = self.compute_pnl(data)
         self.price = self.criterion.cash(self.pnl)
         return self.price
+        
 
 
 class DeepHedger(HedgerBase):

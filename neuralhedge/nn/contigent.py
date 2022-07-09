@@ -16,7 +16,15 @@ class EuropeanVanilla(Module):
         self.call = call
         self.strike = strike
     def payoff(self, paths: Tensor) -> Tensor:
+        """Returns the payoff of financial derivative
+
+            Shape:
+                - payoff_all: (n_paths, n_steps+1, 1) 
+        """
+        payoff_all = torch.zeros(paths.shape[:2])
         if self.call:
-            return F.relu(paths[:,-1,:] - self.strike)
+            payoff_all[:,-1] = F.relu(paths[:,-1,0] - self.strike)
         else:
-            return F.relu(self.strike - paths[:,-1,:])
+            payoff_all[:,-1] = F.relu(self.strike - paths[:,-1,0])
+        return payoff_all[...,None] 
+        

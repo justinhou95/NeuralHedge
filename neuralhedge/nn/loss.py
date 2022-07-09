@@ -8,6 +8,14 @@ import torch.nn.functional as F
 
 from abc import ABC, abstractmethod
 
+def proportional_cost(holding_diff, price_now) -> Tensor:
+    cost = 0.001 * torch.abs(holding_diff) * price_now
+    return cost
+
+def no_cost(holding_diff, price_now) -> Tensor:
+    cost = 0.
+    return cost
+
 def exp_utility(input: Tensor, a: float = 1.0) -> Tensor:
     """
     f(X) = -\exp(-aX) 
@@ -30,6 +38,9 @@ class LossMeasure(ABC, Module):
         pass
 
 
+
+
+
 class EntropicRiskMeasure(LossMeasure):
 
     @property
@@ -40,22 +51,26 @@ class EntropicRiskMeasure(LossMeasure):
         if not a > 0:
             raise ValueError("Risk aversion coefficient should be positive.")
         self._a = a
-    
     def __init__(self, a: float = 1.0) -> None:
         super().__init__()
         self.a = a
-
+        
     def forward(self, input: Tensor) -> Tensor:
         """
         f(X) = (1/a) * log(\E[exp(-aX)])
         """
-        return (-exp_utility(input - input.min(), a=self.a).mean(0)).log() / self.a - input.min()
+        input_T = input[:,-1,:]
+        input_T_min = input_T.min()
+        return (-exp_utility(input_T - input_T_min, a=self.a).mean(0)).log() / self.a - input_T_min
 
     def cash(self, input: Tensor) -> Tensor:
         """
+        input: (n_paths, n_steps+1, 1)
         f(X) = (1/a) * log(a\E[exp(-aX)])
         """
-        return (-exp_utility(input - input.min(), a=self.a).mean(0) * self.a).log() / self.a - input.min()
+        input_T = input[:,-1,:]
+        input_T_min = input_T.min()
+        return (-exp_utility(input_T - input_T_min, a=self.a).mean(0) * self.a).log() / self.a - input_T_min
 
 
 class SquareMeasure(LossMeasure):
@@ -71,13 +86,15 @@ class SquareMeasure(LossMeasure):
         """
         f(X) = Var(X)/2 - E[X]
         """
-        return input.var()/2 - input.mean()
+        input_T = input[:,-1,:]
+        return input_T.var()/2 - input_T.mean()
 
     def cash(self, input: Tensor) -> Tensor:
         """
         f(X) = -E[X]
         """
-        return -input.mean()
+        input_T = input[:,-1,:]
+        return -input_T.mean()
 
 class ExpectedShortfall(LossMeasure):
     @property
@@ -93,23 +110,35 @@ class ExpectedShortfall(LossMeasure):
         super().__init__()
         self._q = q
 
+    def l_func(self, input: Tensor) -> Tensor:
+        return F.relu(-input) / self.q
+
     def forward(self, input: Tensor) -> Tensor:
         """
-        f(X) = ES(X)
+        f(X) = ES_q(X)
         """
-        return expected_shortfall(input, self.q)
+        input_T = input[:,-1,:]
+        return expected_shortfall(input_T, self.q)
 
     def cash(self, input: Tensor) -> Tensor:
         """
-        f(X) = -E[X]
+        f(X) = -VaR_q(X)
         """
-        return -value_at_risk(input, self.q)
+        input_T = input[:,-1,:]
+        return -value_at_risk(input_T, self.q)
 
 
-def proportional_cost(holding_diff, price_now) -> Tensor:
-    cost = 0.001 * torch.abs(holding_diff) * price_now
-    return cost
+class OCELoss(LossMeasure):
 
-def no_cost(holding_diff, price_now) -> Tensor:
-    cost = 0.
-    return cost
+    def __init__(self, loss = ExpectedShortfall()) -> None:
+        super().__init__()
+        self.oce = True
+        self.loss = loss.l_func
+        
+    def forward(self, input: Tensor, wealth_0: Tensor) -> Tensor:
+        input_T = input[:,-1,:]
+        return torch.mean(wealth_0 + 100* input_T**2)
+        
+    def cash(self, input: Tensor) -> Tensor:
+        input_T = input[:,-1,:]
+        return 0

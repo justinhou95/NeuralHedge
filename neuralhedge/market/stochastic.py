@@ -9,7 +9,7 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
-from pfhedge.stochastic import generate_heston, generate_geometric_brownian
+from pfhedgenew.stochastic import generate_heston, generate_geometric_brownian
 
 class StochasticProcesses(ABC):
     def __init__(
