@@ -37,8 +37,26 @@ class LossMeasure(ABC, Module):
     def cash(self,):
         pass
 
-
-
+class PowerMeasure(LossMeasure):
+    @property
+    def p(self):
+        return self._p
+    @p.setter
+    def p(self,p: float = 1.0):
+        if not p > 0:
+            raise ValueError("Risk aversion coefficient should be positive.")
+        self._p = p
+    def __init__(self, p: float = 1.0) -> None:
+        super().__init__()
+        self.p = p
+    def forward(self, input: Tensor) -> Tensor:
+        """
+        f(X) = (1/p) (\E[\max{X,0}^{p}])
+        """
+        input_T = input[:,-1,:]
+        return  (F.relu(-input_T)**self.p).mean(0)**(1/self.p)/self.p
+    def cash(self,):
+        return 2.0
 
 
 class EntropicRiskMeasure(LossMeasure):
