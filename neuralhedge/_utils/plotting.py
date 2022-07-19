@@ -5,12 +5,16 @@ import matplotlib.pyplot as plt
 # def to_numpy(tensor: torch.Tensor) -> np.array:
 #     return tensor.cpu().detach().numpy()
 
-def plot_hedge(hedger, data_set, pnl = True):
+def plot_hedge(hedger, data_set, pnl = True, price = None):
     paths,_,payoff = data_set
+    payoff = payoff.numpy()
     wealth0 = hedger(data_set).detach().numpy()
-    price = hedger.pricer(data_set).detach().numpy()
+    if not price:
+        price = hedger.pricer(data_set).detach().numpy()
     wealth = wealth0 + price
-    
+    pnl = wealth - payoff
+
+    print('Price: ', price)
 
     plt.figure
     plt.scatter(paths[:,-1,0], wealth[:,-1,0])
@@ -21,11 +25,13 @@ def plot_hedge(hedger, data_set, pnl = True):
     plt.grid()
     plt.show()
 
-    print('Price: ', price)
-
-    if pnl:
-        pnl = hedger.compute_pnl(data_set).detach().numpy()
-        plot_pnl(pnl[:,-1,:])
+    plt.figure()
+    plt.hist(pnl[:,-1,0], bins=100)
+    plt.title("Profit-Loss Histograms")
+    plt.xlabel("Profit-Loss")
+    plt.ylabel("Number of events")
+    plt.grid()
+    plt.show()
 
 
 def plot_pnl(pnl):

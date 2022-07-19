@@ -12,6 +12,10 @@ def proportional_cost(holding_diff, price_now) -> Tensor:
     cost = 0.001 * torch.abs(holding_diff) * price_now
     return cost
 
+def admissible_cost(wealth) -> Tensor:
+    cost = F.relu(-torch.min(wealth, dim = 1).values).mean()
+    return cost
+
 def no_cost(holding_diff, price_now) -> Tensor:
     cost = 0.
     return cost
@@ -144,19 +148,3 @@ class ExpectedShortfall(LossMeasure):
         """
         input_T = input[:,-1,:]
         return -value_at_risk(input_T, self.q)
-
-
-class OCELoss(LossMeasure):
-
-    def __init__(self, loss = ExpectedShortfall()) -> None:
-        super().__init__()
-        self.oce = True
-        self.loss = loss.l_func
-        
-    def forward(self, input: Tensor, wealth_0: Tensor) -> Tensor:
-        input_T = input[:,-1,:]
-        return torch.mean(wealth_0 + 100* input_T**2)
-        
-    def cash(self, input: Tensor) -> Tensor:
-        input_T = input[:,-1,:]
-        return 0
