@@ -12,8 +12,8 @@ def proportional_cost(holding_diff, price_now) -> Tensor:
     cost = 0.001 * torch.abs(holding_diff) * price_now
     return cost
 
-def admissible_cost(wealth) -> Tensor:
-    cost = F.relu(-torch.min(wealth, dim = 1).values).mean()
+def admissible_cost(wealth, bound = 0.) -> Tensor:
+    cost = F.relu(bound - torch.min(wealth, dim = 1).values ).mean()
     return cost
 
 def no_cost(holding_diff, price_now) -> Tensor:
