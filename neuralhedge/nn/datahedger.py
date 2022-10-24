@@ -67,9 +67,14 @@ class Hedger(HedgerBase):
         - criterion (HedgeLoss)
     """
 
-    def __init__(self,model: Optional[Module]):
+    def __init__(
+        self,
+        model: Optional[Module],
+        cost_functional = no_cost,
+        ):
         super().__init__()
         self.model = model
+        self.cost_functional = cost_functional
 
     def forward(self, input: List[Tensor]) -> Tensor:
 
@@ -141,7 +146,6 @@ class Hedger(HedgerBase):
     def fit(
         self, dataset_market: MarketDataset,
         criterion: Module = EntropicRiskMeasure(),
-        cost_functional = no_cost,
         EPOCHS=100, batch_size=256, 
         optimizer=torch.optim.Adam, 
         lr=0.001,
@@ -151,7 +155,7 @@ class Hedger(HedgerBase):
         self.n_paths = int(self.dataset_market.prices.shape[0]) 
         self.n_steps = int(self.dataset_market.prices.shape[1]) - 1  
         self.criterion = criterion
-        self.cost_functional = cost_functional
+        
 
         self.dataloader_market = DataLoader(
             self.dataset_market, batch_size=batch_size, shuffle=True, num_workers=0)

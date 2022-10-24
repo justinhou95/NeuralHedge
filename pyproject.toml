@@ -2,12 +2,22 @@
 name = "neuralhedge"
 version = "0.1.0"
 description = "Model-free deep hedge"
-authors = ["songyan-hou <815759459@qq.com>"]
+authors = ["songyan-hou <justinhou95@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/justinhou95/NeuralHedge"
+
 
 [tool.poetry.dependencies]
 python = "^3.8"
+matplotlib = "^3.5"
+torch = "^1.9"
+tqdm = "^4.64.0"
+pfhedge = "^0.20.0"
+
 
 [tool.poetry.dev-dependencies]
+jupyter = "^1.0.0"
+
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
