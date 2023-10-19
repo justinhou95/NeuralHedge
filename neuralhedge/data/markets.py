@@ -6,7 +6,7 @@ from math import ceil
 import matplotlib.pyplot as plt
 
 from neuralhedge.nn import datahedger, contigent
-from neuralhedge.market import stochastic
+from neuralhedge.data import stochastic
 from neuralhedge._utils.plotting import plot_data_set
 
 def BlackScholesTestMarket(deep = False):

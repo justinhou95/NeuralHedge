@@ -21,7 +21,7 @@ class MarketDataset(Dataset):
         - data_set (List[Tensor]): [prices, information, payoff]
     Shape:
         - prices: (n_samples, n_steps+1, n_assets)
-        - information: (n_samples, n_steps or n_steps+1, n_features)
+        - information: (n_samples, >= n_steps , n_features)
         - payoff: (n_samples, 1)
     """
 
@@ -57,7 +57,6 @@ class HedgerBase(Module, ABC):
         pass
     
 
-
 class Hedger(HedgerBase):
 
     """Hedger to hedge with only data generated but not the generating class
@@ -69,7 +68,7 @@ class Hedger(HedgerBase):
 
     def __init__(
         self,
-        model: Optional[Module],
+        model: Module,
         cost_functional = no_cost,
         ):
         super().__init__()
@@ -77,7 +76,6 @@ class Hedger(HedgerBase):
         self.cost_functional = cost_functional
 
     def forward(self, input: List[Tensor]) -> Tensor:
-
         """Compute the terminal wealth
 
         Args:
@@ -88,13 +86,12 @@ class Hedger(HedgerBase):
         Note:
             V_t: Wealth process 
             I_t: Information process = (information, state_information)
-            H: hedging strategy
+            H: hedging strategy functional
+            H_t: holding process
             S_t: Price process
             C_t: Cost process
             dV_t = H(I_t)dS_t - dC_t
             
-
-
         Returns:
             V_T: torch.Tensor
         """
@@ -102,22 +99,22 @@ class Hedger(HedgerBase):
         wealth = torch.zeros_like(prices)
         holding = torch.zeros_like(prices)
         for t in range(prices.shape[1]-1):
-            all_information = self.compute_all_information(holding, information, t)
-            holding[:,t+1,:] = self.compute_hedge(all_information, t)
-            cost = self.compute_cost(holding, prices, t)
+            all_information = self.compute_info(holding, information, t)   # compute information at time t 
+            holding[:,t+1,:] = self.compute_hedge(all_information, t)  # compute the holding at time t+1
+            cost = self.compute_cost(holding, prices, t)  # compute the transaction cost 
             wealth[:,t+1,:] = wealth[:,t,:] + self.update_wealth(holding, prices, cost, t)
 
         wealth = torch.sum(wealth, dim=-1, keepdim=True)
         return wealth
 
-    def compute_all_information(self, holding: Tensor, information: Tensor, t = None) -> Tensor:
+    def compute_info(self, holding: Tensor, information: Tensor, t = None) -> Tensor:
         state_information = holding[:,t,:]
         all_information = torch.cat(
                 [information[:, t, :], state_information], 
                 dim=-1)
         return all_information 
 
-    def compute_hedge(self, all_information: Tensor, t = None) -> Tensor:
+    def compute_hedge(self, all_information: Tensor, t = None) -> Tensor:   # We might use t here if it is deep hedge
         holding = self.model(all_information)
         return holding   
 
@@ -130,17 +127,18 @@ class Hedger(HedgerBase):
     def update_wealth(self, holding, prices, cost, t):
         wealth_incr = holding[:,t+1,:] * (prices[:,t+1,:] - prices[:,t,:]) - cost
         return wealth_incr
-
+    
+    # not used in forward
     def compute_pnl(self, input: List[Tensor]):
         prices, information, payoff = input
-        wealth= self(input)
+        wealth= self.forward(input)
         pnl = wealth - payoff
         return pnl
 
     def compute_loss(self, input: List[Tensor]):
         pnl = self.compute_pnl(input)
         return self.criterion(pnl)
-        # TODO: make it clean here
+        # TODO: make it clean herex
         
 
     def fit(
@@ -175,21 +173,21 @@ class Hedger(HedgerBase):
 
         return self.history
 
-    def pricer(self, data) -> Tensor:
-        self.pnl = self.compute_pnl(data)
-        self.price = self.criterion.cash(self.pnl)
-        return self.price
+    # def pricer(self, data) -> Tensor:
+    #     self.pnl = self.compute_pnl(data)
+    #     self.price = self.criterion.cash(self.pnl)
+    #     return self.price
         
 
 
-class DeepHedger(Hedger):
-    def __init__(self,models: List,):
-        super().__init__(None)
-        self.models = ModuleList(models)
+# class DeepHedger(Hedger):
+#     def __init__(self,models: List,):
+#         super().__init__(None)
+#         self.models = ModuleList(models)
 
-    def compute_hedge(self, all_information: Tensor, t = None) -> Tensor:
-        holding = self.models[t](all_information)
-        return holding
+#     def compute_hedge(self, all_information: Tensor, t = None) -> Tensor:
+#         holding = self.models[t](all_information)
+#         return holding
         
-    def compute_all_information(self, holding: Tensor, information: Tensor, t = None) -> Tensor:
-        return information[:, t, :]
+#     def compute_all_information(self, holding: Tensor, information: Tensor, t = None) -> Tensor:
+#         return information[:, t, :]

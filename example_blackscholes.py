@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from neuralhedge.nn import datahedger, contigent, mlp, loss, blackschole
 from neuralhedge.nn.loss import ExpectedShortfall
-from neuralhedge.market import stochastic, markets
+from neuralhedge.data import stochastic, markets
 from neuralhedge._utils.plotting import plot_pnl, plot_history, plot_data_set, plot_hedge
 from importlib import reload
 
@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     # Delta hedge 
     plt.plot('Delta Hedge')
-    model = blackschole.BlackScholesDelta(sigma=0.2,strike=100.)
+    model = blackschole.BlackScholesDelta(sigma=0.2,strike=100)
     hedger = datahedger.Hedger(model) 
     plot_hedge(hedger, data_set, price = true_price)
 
