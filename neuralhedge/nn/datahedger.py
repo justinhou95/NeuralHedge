@@ -1,5 +1,6 @@
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 import torch
 from torch import Tensor
@@ -11,34 +12,15 @@ from tqdm import tqdm  # type: ignore
 
 from abc import ABC, abstractmethod
 
-from .loss import EntropicRiskMeasure, proportional_cost, no_cost
+from neuralhedge.nn.loss import EntropicRiskMeasure, LossMeasure, proportional_cost, no_cost, admissible_cost, log_utility
 from neuralhedge._utils.plotting import plot_pnl, plot_history
+from neuralhedge.data.base import HedgerDataset
 
-
-class MarketDataset(Dataset):
-    """Market information dataset.
-    Args:
-        - data_set (List[Tensor]): [prices, information, payoff]
-    Shape:
-        - prices: (n_samples, n_steps+1, n_assets)
-        - information: (n_samples, >= n_steps , n_features)
-        - payoff: (n_samples, 1)
-    """
-
-    def __init__(self, data: List[Tensor]):
-        self.data = data
-        self.prices, self.information, self.payoff = data
-
-    def __len__(self):
-        return len(self.prices)
-
-    def __getitem__(self, idx: int):
-        return [self.prices[idx], self.information[idx], self.payoff[idx]]
+from os import path as pt
 
 class HedgerBase(Module, ABC):
-
     @abstractmethod
-    def update_wealth():
+    def add_wealth():
         pass
     @abstractmethod
     def compute_cost():
@@ -50,12 +32,8 @@ class HedgerBase(Module, ABC):
     def compute_loss():
         pass
     @abstractmethod
-    def compute_pnl():
+    def compute_info():
         pass
-    @abstractmethod
-    def compute_all_information():
-        pass
-    
 
 class Hedger(HedgerBase):
 
@@ -74,8 +52,10 @@ class Hedger(HedgerBase):
         super().__init__()
         self.model = model
         self.cost_functional = cost_functional
+        self.history = []
+        self.steps = 1
 
-    def forward(self, input: List[Tensor]) -> Tensor:
+    def forward(self, input: List[Tensor]):
         """Compute the terminal wealth
 
         Args:
@@ -96,26 +76,25 @@ class Hedger(HedgerBase):
             V_T: torch.Tensor
         """
         prices, information, payoff = input 
-        wealth = torch.zeros_like(prices)
+        batch_size = prices.shape[0]
+        wealth = [torch.zeros([batch_size]) for t in range(prices.shape[1])]
         holding = torch.zeros_like(prices)
         for t in range(prices.shape[1]-1):
             all_information = self.compute_info(holding, information, t)   # compute information at time t 
             holding[:,t+1,:] = self.compute_hedge(all_information, t)  # compute the holding at time t+1
             cost = self.compute_cost(holding, prices, t)  # compute the transaction cost 
-            wealth[:,t+1,:] = wealth[:,t,:] + self.update_wealth(holding, prices, cost, t)
-
-        wealth = torch.sum(wealth, dim=-1, keepdim=True)
+            wealth[t+1] = wealth[t] + self.add_wealth(holding, prices, cost, t)
         return wealth
 
-    def compute_info(self, holding: Tensor, information: Tensor, t = None) -> Tensor:
-        state_information = holding[:,t,:]
-        all_information = torch.cat(
-                [information[:, t, :], state_information], 
+    def compute_info(self, holding: Tensor, info: Tensor, t = None) -> Tensor:
+        state_info = holding[:,t,:]
+        all_info = torch.cat(
+                [info[:, t, :], state_info], 
                 dim=-1)
-        return all_information 
-
-    def compute_hedge(self, all_information: Tensor, t = None) -> Tensor:   # We might use t here if it is deep hedge
-        holding = self.model(all_information)
+        return all_info
+    
+    def compute_hedge(self, all_info: Tensor, t = None) -> Tensor:   # We might use t here if it is deep hedge
+        holding = self.model(all_info)
         return holding   
 
     def compute_cost(self, holding, prices, t) -> Tensor:
@@ -124,70 +103,60 @@ class Hedger(HedgerBase):
         cost = self.cost_functional(holding_diff, price_now)
         return cost
 
-    def update_wealth(self, holding, prices, cost, t):
+    def add_wealth(self, holding, prices, cost, t):
         wealth_incr = holding[:,t+1,:] * (prices[:,t+1,:] - prices[:,t,:]) - cost
+        wealth_incr = torch.sum(wealth_incr , dim=-1, keepdim=False)
         return wealth_incr
     
-    # not used in forward
     def compute_pnl(self, input: List[Tensor]):
         prices, information, payoff = input
         wealth= self.forward(input)
-        pnl = wealth - payoff
+        pnl = wealth[-1] - payoff
         return pnl
 
     def compute_loss(self, input: List[Tensor]):
         pnl = self.compute_pnl(input)
-        return self.criterion(pnl)
-        # TODO: make it clean herex
+        return self.risk(pnl)
+    
+    def pricer(self, data):
+        with torch.no_grad():
+            pnl = self.compute_pnl(data)
+            price = self.risk.cash(pnl)
+        return price
         
-
     def fit(
-        self, dataset_market: MarketDataset,
-        criterion: Module = EntropicRiskMeasure(),
+        self, hedger_ds: Dataset,
+        risk: LossMeasure = EntropicRiskMeasure(),
         EPOCHS=100, batch_size=256, 
         optimizer=torch.optim.Adam, 
-        lr=0.001,
+        lr=0.01,
+        record_dir = None
         ):
-
-        self.dataset_market = dataset_market
-        self.n_paths = int(self.dataset_market.prices.shape[0]) 
-        self.n_steps = int(self.dataset_market.prices.shape[1]) - 1  
-        self.criterion = criterion
-        
-
-        self.dataloader_market = DataLoader(
-            self.dataset_market, batch_size=batch_size, shuffle=True, num_workers=0)
+        self.risk = risk
+        hedger_dl = DataLoader(
+            hedger_ds, batch_size=batch_size, shuffle=True, num_workers=0)
 
         self.optimizer = optimizer(self.parameters(),lr = lr)
-        self.history = []
+        lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
+            self.optimizer, gamma=0.9)
+            
+        self.train(True)
         progress = tqdm(range(EPOCHS))
-        for _ in progress:
-            self.train(True)
-            for i, data in enumerate(self.dataloader_market):
+        for epoch in progress:
+            for i, data in enumerate(hedger_dl):
                 self.optimizer.zero_grad()
                 loss = self.compute_loss(data)
                 loss.backward()
                 self.optimizer.step()
                 self.history.append(loss.item())
                 progress.desc = "Loss=" + str(loss.item())
+                self.steps += 1
+            lr_scheduler.step()
+            if epoch % 10 == 0 and record_dir:
+                self.record_parameter(record_dir)
 
-        return self.history
-
-    # def pricer(self, data) -> Tensor:
-    #     self.pnl = self.compute_pnl(data)
-    #     self.price = self.criterion.cash(self.pnl)
-    #     return self.price
-        
+    def record_parameter(self, record_dir):
+        file_path = pt.join(record_dir,"parameter" +str(self.steps) + ".pth")
+        torch.save(self.state_dict(), file_path)
 
 
-# class DeepHedger(Hedger):
-#     def __init__(self,models: List,):
-#         super().__init__(None)
-#         self.models = ModuleList(models)
-
-#     def compute_hedge(self, all_information: Tensor, t = None) -> Tensor:
-#         holding = self.models[t](all_information)
-#         return holding
-        
-#     def compute_all_information(self, holding: Tensor, information: Tensor, t = None) -> Tensor:
-#         return information[:, t, :]

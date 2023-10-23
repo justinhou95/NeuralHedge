@@ -1,21 +1,8 @@
-from typing import Tuple
-
-from abc import ABC, abstractmethod
-
-import numpy as np
-import matplotlib.pyplot as plt
-
 import torch
 from torch import Tensor
-from torch.nn import Module
-
-from pfhedge.stochastic import generate_heston, generate_geometric_brownian
-
-
-import torch
-import numpy as np
 from torch.utils.data import Dataset, DataLoader, TensorDataset
-import matplotlib.pyplot as plt
+
+# from pfhedge.stochastic import generate_heston
 
 def simulate_BM(n_sample, dt, n_timestep):
     noise = torch.randn(size = (n_sample, n_timestep))
@@ -45,9 +32,10 @@ class BlackScholesDataset(TensorDataset):
     def __init__(self, 
                  n_sample, 
                  n_timestep,  
-                 mu = 0.1, 
-                 sigma = 0.2, 
-                 dt = 1/12):
+                 dt,
+                 mu = 0.0, 
+                 sigma = 0.2,
+                 ):
         self.mu = mu
         self.sigma = sigma
         self.dt = dt
@@ -57,49 +45,50 @@ class BlackScholesDataset(TensorDataset):
         self.paths = self.prices
         super(BlackScholesDataset, self).__init__(self.paths)
     
-class HestonDataset(TensorDataset):
-    def __init__(self, 
-                 n_sample, 
-                 n_timestep,
-                 kappa: float = 1.0,
-                 theta: float = 0.04,
-                 sigma: float = 0.2,
-                 rho: float = -0.7,
-                 dt = 1/12):
-        self.kappa = kappa
-        self.theta = theta
-        self.sigma = sigma
-        self.rho = rho
-        self.dt = dt
-        self.n_sample = n_sample
-        self.n_timestep = n_timestep
-        self.inital_values = (1. , theta)
-        self.paths = self.simulate_Heston().type(torch.float32)
-        super(HestonDataset, self).__init__(self.paths)
+# class HestonDataset(TensorDataset):
+#     def __init__(self, 
+#                  n_sample, 
+#                  n_timestep,
+#                  dt,
+#                  kappa: float = 1.0,
+#                  theta: float = 0.04,
+#                  sigma: float = 0.2,
+#                  rho: float = -0.7,
+#                  ):
+#         self.kappa = kappa
+#         self.theta = theta
+#         self.sigma = sigma
+#         self.rho = rho
+#         self.dt = dt
+#         self.n_sample = n_sample
+#         self.n_timestep = n_timestep
+#         self.inital_values = (1. , theta)
+#         self.paths = self.simulate_Heston().type(torch.float32)
+#         super(HestonDataset, self).__init__(self.paths)
 
-    def simulate_Heston(self):
-        hestontuple = generate_heston(
-            n_paths = self.n_sample,
-            n_steps = self.n_timestep+1,
-            init_state = self.inital_values,
-            kappa = self.kappa,
-            theta = self.theta,
-            sigma = self.sigma,
-            rho = self.rho,
-            dt = self.dt)
-        self.prices = hestontuple.spot[...,None]
-        self.variances = hestontuple.variance[...,None]
-        self.paths = torch.cat([self.prices, self.variances], dim = -1)
-        return self.paths
+#     def simulate_Heston(self):
+#         hestontuple = generate_heston(
+#             n_paths = self.n_sample,
+#             n_steps = self.n_timestep+1,
+#             init_state = self.inital_values,
+#             kappa = self.kappa,
+#             theta = self.theta,
+#             sigma = self.sigma,
+#             rho = self.rho,
+#             dt = self.dt)
+#         self.prices = hestontuple.spot[...,None]
+#         self.variances = hestontuple.variance[...,None]
+#         self.paths = torch.cat([self.prices, self.variances], dim = -1)
+#         return self.paths
     
-    def calculate_varswap(self):
-        self.times_inverse = simulate_time(self.n_sample, self.dt, self.n_timestep, reverse = True)
-        self.prices_varswap = torch.cumsum(self.variances,dim=1) * self.dt + self.L_func(self.times_inverse, self.variances)
-        return self.prices_varswap
+#     def calculate_varswap(self):
+#         self.times_inverse = simulate_time(self.n_sample, self.dt, self.n_timestep, reverse = True)
+#         self.prices_varswap = torch.cumsum(self.variances,dim=1) * self.dt + self.L_func(self.times_inverse, self.variances)
+#         return self.prices_varswap
 
-    def L_func(self, tau: Tensor, v: Tensor) -> Tensor:
-        L = (v-self.theta) / self.kappa * (1-(-self.kappa*(tau)).exp()) + self.theta*tau
-        return L
+#     def L_func(self, tau: Tensor, v: Tensor) -> Tensor:
+#         L = (v-self.theta) / self.kappa * (1-(-self.kappa*(tau)).exp()) + self.theta*tau
+#         return L
     
 
         

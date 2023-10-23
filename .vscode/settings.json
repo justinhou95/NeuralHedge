@@ -1,7 +1,8 @@
 {
     "notebook.output.textLineLimit": 500,
     "cSpell.words": [
-        "neuralhedge"
+        "neuralhedge",
+        "timestep"
     ],
     "python.analysis.typeCheckingMode": "basic",
     "notebook.output.lineHeight": 22
