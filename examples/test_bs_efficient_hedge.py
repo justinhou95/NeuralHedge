@@ -11,7 +11,7 @@ from neuralhedge.nn.loss import EntropicRiskMeasure, LossMeasure, SquareMeasure,
 from neuralhedge._utils.plotting import plot_pnl, plot_history, plot_data, plot_hedge
 from neuralhedge.data.stochastic import BlackScholesDataset, simulate_time
 from neuralhedge.nn.contigent import EuropeanVanilla
-from neuralhedge.nn.datahedger import EfficientHedger
+from neuralhedge.nn.efficienthedger import EfficientHedger
 
 
 

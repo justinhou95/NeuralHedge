@@ -31,7 +31,8 @@ class Manager(Hedger):
         wealth = [torch.ones([batch_size]) for t in range(prices.shape[1])]
         prop = torch.zeros_like(prices)
         for t in range(prices.shape[1]-1):
-            all_information = self.compute_info(prop, information, t)   # compute information at time t 
+            state_info = wealth[t]
+            all_information = self.compute_info(state_info, information, t)   # compute information at time t 
             prop[:,t+1,:] = self.compute_prop(all_information, t)  # compute the holding at time t+1
             return_t = torch.sum(prop[:,t+1,:] * (prices[:,t+1,:]/prices[:,t,:]),dim=-1, keepdim=False)
             wealth[t+1] = wealth[t] * return_t
@@ -41,11 +42,26 @@ class Manager(Hedger):
         prop = self.model(all_information)
         return prop
 
-    def compute_info(self, holding: Tensor, information: Tensor, t = None) -> Tensor:
-        all_information = information[:, t, :]
-        return all_information 
+    def compute_info(self, state_info: Tensor, info: Tensor, t = None) -> Tensor:
+        all_info = info[:, t, :]
+        return all_info
 
     def compute_loss(self, input: List[Tensor]):
         terminal_wealth = self.forward(input)[-1]
         return -self.utility_func(terminal_wealth)
     
+    
+class WealthManager(Manager):
+    def __init__(self, model: Module, utility_func=...):
+        super().__init__(model, utility_func)
+    def compute_info(self, state_info: Tensor, info: Tensor, t = None) -> Tensor:
+        state_info = state_info.view(state_info.shape[0],-1)
+        all_info = torch.cat(
+                [info[:, t, :], state_info], 
+                dim=-1)
+        return all_info
+    def mean_std_terminal_wealth(self,data):
+        mean_list = []
+        std_list = []
+    
+        return mean_list, std_list

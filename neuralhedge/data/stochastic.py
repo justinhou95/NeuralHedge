@@ -45,6 +45,10 @@ class BlackScholesDataset(TensorDataset):
         self.paths = self.prices
         super(BlackScholesDataset, self).__init__(self.paths)
     
+
+
+
+    
 # class HestonDataset(TensorDataset):
 #     def __init__(self, 
 #                  n_sample, 

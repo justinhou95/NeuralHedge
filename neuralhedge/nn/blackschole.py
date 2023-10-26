@@ -52,18 +52,53 @@ class BlackScholesAlpha(Module):
         mu,
         sigma, 
         r, 
+        alpha = None
         ):
         super(BlackScholesAlpha, self).__init__()
         self.mu = mu 
         self.sigma = sigma 
         self.r = r
-        self.alpha = (self.mu-self.r)/(self.sigma**2)
+        if alpha is None:
+            self.alpha = (self.mu-self.r)/(self.sigma**2)
+        else: 
+            self.alpha = alpha
 
     def forward(self, x):
         prop1 = torch.ones_like(x[...,:1]) * self.alpha
         prop2 = torch.ones_like(x[...,:1]) * (1-self.alpha)
         prop = torch.cat([prop1, prop2],dim = -1)
         return prop
+    
+
+class BlackScholesMeanVarianceAlpha(BlackScholesAlpha):
+    def __init__(self, mu, sigma, r, Wstar, alpha=None):
+        super().__init__(mu, sigma, r, alpha)
+        self.xi = (self.mu-self.r)/self.sigma
+        self.Wstar = Wstar
+
+    def compute_alpha(self, x):
+        wealth = x[...,-1]
+        time_to_maturity = x[...,1]
+        alpha = self.xi/self.sigma/wealth*(self.Wstar*torch.exp(-self.r*time_to_maturity) - wealth)
+        return alpha.view(-1,1)
+    def forward(self, x):
+        alpha = self.compute_alpha(x)
+        prop = torch.cat([alpha, 1-alpha],dim = -1)
+        return prop
+    
+class BlackScholesMeanVarianceAlphaClip(BlackScholesMeanVarianceAlpha):
+    def __init__(self, mu, sigma, r, Wstar):
+        super().__init__(mu, sigma, r, Wstar)
+    def forward(self, x):
+        alpha = self.compute_alpha(x)
+
+        alpha = alpha * (alpha>0)
+        alpha_clip = alpha * (alpha<1) + (alpha >=1)
+
+        prop = torch.cat([alpha_clip, 1-alpha_clip],dim = -1)
+        return prop
+
+
 
         
         
