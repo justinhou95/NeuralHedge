@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -52,7 +53,7 @@ class Hedger(HedgerBase):
         super().__init__()
         self.model = model
         self.cost_functional = cost_functional
-        self.history = []
+        self.history = defaultdict(list)
         self.steps = 1
 
     def forward(self, input: List[Tensor]):
@@ -129,6 +130,7 @@ class Hedger(HedgerBase):
         risk: LossMeasure = EntropicRiskMeasure(),
         EPOCHS=100, batch_size=256, 
         optimizer=torch.optim.Adam, 
+        lr_scheduler_gamma = 0.9,
         lr=0.01,
         record_dir = None
         ):
@@ -138,7 +140,7 @@ class Hedger(HedgerBase):
 
         self.optimizer = optimizer(self.parameters(),lr = lr)
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
-            self.optimizer, gamma=0.9)
+            self.optimizer, gamma=lr_scheduler_gamma)
             
         self.train(True)
         progress = tqdm(range(EPOCHS))
@@ -148,12 +150,16 @@ class Hedger(HedgerBase):
                 loss = self.compute_loss(data)
                 loss.backward()
                 self.optimizer.step()
-                self.history.append(loss.item())
+                self.history['loss'].append(loss.item())
+                self.record_history()
                 progress.desc = "Loss=" + str(loss.item())
                 self.steps += 1
             lr_scheduler.step()
             if epoch % 10 == 0 and record_dir:
                 self.record_parameter(record_dir)
+
+    def record_history(self,):
+        pass
 
     def record_parameter(self, record_dir):
         file_path = pt.join(record_dir,"parameter" +str(self.steps) + ".pth")

@@ -50,6 +50,9 @@ class Manager(Hedger):
         terminal_wealth = self.forward(input)[-1]
         return -self.utility_func(terminal_wealth)
     
+    def record_history(self,):
+        return self.history['alpha'].append(list(self.parameters())[0].item())
+    
     
 class WealthManager(Manager):
     def __init__(self, model: Module, utility_func=...):

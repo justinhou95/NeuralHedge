@@ -34,7 +34,7 @@ def plot_hedge(hedger, data, init_wealth, record_dir = None):
 
 def plot_pnl(pnl, record_dir = None):
     fig = plt.figure()
-    plt.hist(pnl, bins = list(np.linspace(-3,3,100)))
+    plt.hist(pnl, bins = list(np.linspace(-5,5,100)))
     plt.title("Profit-Loss Histograms")
     plt.xlabel("Profit-Loss")
     plt.ylabel("Number of events")
