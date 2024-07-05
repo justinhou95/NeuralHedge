@@ -2,8 +2,6 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 
-# from pfhedge.stochastic import generate_heston
-
 def simulate_BM(n_sample, dt, n_timestep):
     noise = torch.randn(size = (n_sample, n_timestep))
     paths_incr = noise * torch.sqrt(torch.tensor(dt))
@@ -28,22 +26,14 @@ def simulate_time(n_sample, dt, n_timestep, reverse = False):
         return time_paths
 
 
-class BlackScholesDataset(TensorDataset):
-    def __init__(self, 
-                 n_sample, 
-                 n_timestep,  
-                 dt,
-                 mu = 0.0, 
-                 sigma = 0.2,
-                 ):
+class BlackScholes:
+    def __init__(self, n_sample, n_timestep, dt, mu, sigma):
         self.mu = mu
         self.sigma = sigma
         self.dt = dt
         self.n_sample = n_sample
         self.n_timestep = n_timestep
         self.prices = simulate_BS(self.n_sample, self.dt, self.n_timestep, self.mu, self.sigma).type(torch.float32)
-        self.paths = self.prices
-        super(BlackScholesDataset, self).__init__(self.paths)
     
 
 

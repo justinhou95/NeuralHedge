@@ -1,3 +1,9 @@
+
+'''
+Benchmark strategy for BlackScholes
+
+'''
+
 from signal import Sigmasks
 from torch.nn import Module
 import torch

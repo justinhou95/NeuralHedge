@@ -6,7 +6,7 @@ authors = ["Justin Hou <justinhou@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9"
 matplotlib = "^3.8.0"
 jupyter = "^1.0.0"
 notebook = "^7.0.6"
