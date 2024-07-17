@@ -1,22 +1,10 @@
 from typing import List
-from typing import Optional
-from typing import Tuple
 
 import torch
 from torch import Tensor
 from torch.nn import Module
-from torch.nn import ModuleList
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
-from tqdm import tqdm  # type: ignore
 
-from abc import ABC, abstractmethod
 from neuralhedge.nn.datahedger import Hedger
-
-from neuralhedge.nn.loss import EntropicRiskMeasure, LossMeasure, proportional_cost, no_cost, admissible_cost, log_utility
-from neuralhedge._utils.plotting import plot_pnl, plot_history
-from neuralhedge.data.base import HedgerDataset
-
 from os import path as pt
 
 class EfficientHedger(Hedger):
@@ -37,4 +25,4 @@ class EfficientHedger(Hedger):
         ad_cost = admissible_cost(wealth_tensor, self.ad_bound)
         loss = self.risk(pnl) + ad_cost
         return loss
-
+    

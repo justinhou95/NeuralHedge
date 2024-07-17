@@ -1,9 +1,9 @@
 import torch
-from neuralhedge.data.stochastic import BlackScholesDataset, simulate_time
+from neuralhedge.data.stochastic import BlackScholes, simulate_time
 import numpy as np 
 from neuralhedge.nn.blackschole import BlackScholesAlpha, BlackScholesMeanVarianceAlpha, BlackScholesMeanVarianceAlphaClip
 from neuralhedge.nn.datamanager import WealthManager
-from neuralhedge.data.market import stockbond_market
+# from neuralhedge.data.market import stockbond_market
 
 def BS_efficient_frontier(mu, sigma, r, data = None):   
     """ Calculate the efficient frontier

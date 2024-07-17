@@ -26,7 +26,6 @@ def exp_utility(input: Tensor, a: float = 1.0) -> Tensor:
     """
     return -(-a * input).exp()
 
-
 def log_utility(x : Tensor) -> Tensor:
     return x.log().mean()
 
@@ -67,7 +66,7 @@ class PowerMeasure(LossMeasure):
 
 
 class EntropicRiskMeasure(LossMeasure):
-    @property
+    @property  # need property here?
     def a(self):
         return self._a
     @a.setter
@@ -81,7 +80,7 @@ class EntropicRiskMeasure(LossMeasure):
         
     def forward(self, input_T: Tensor) -> Tensor:
         """
-        f(X) = (1/a) * log(E[exp(-aX)])
+        rho(X) = (1/a) * log(E[exp(-aX)])
         """
         input_T_min = input_T.min()
         return (-exp_utility(input_T - input_T_min, a=self.a).mean()).log() / self.a - input_T_min

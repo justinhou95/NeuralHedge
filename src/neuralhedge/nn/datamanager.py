@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from neuralhedge.nn.datahedger import Hedger
 
 from neuralhedge.nn.loss import EntropicRiskMeasure, LossMeasure, proportional_cost, no_cost, admissible_cost, log_utility
-from neuralhedge._utils.plotting import plot_pnl, plot_history
+from neuralhedge.utils.plotting import plot_pnl, plot_history
 from neuralhedge.data.base import HedgerDataset
 
 from os import path as pt

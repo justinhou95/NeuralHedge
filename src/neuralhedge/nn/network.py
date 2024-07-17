@@ -7,6 +7,7 @@ from torch.nn import Linear
 from torch.nn import Module
 from torch.nn import ReLU
 from torch.nn import Sequential
+from torch import nn
 import torch
 
 class NeuralNetSequential(Sequential):
@@ -17,11 +18,12 @@ class NeuralNetSequential(Sequential):
         n_units: int = 32,
         activation: Module = ReLU(),
     ):
-        layers: List[Module] = []
+        layers = []
         for i in range(n_layers):
             layers.append(LazyLinear(n_units))
             layers.append(deepcopy(activation))
         layers.append(Linear(n_units, n_output))
+        layers.append(nn.Sigmoid())
         super().__init__(*layers)
 
 

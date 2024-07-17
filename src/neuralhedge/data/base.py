@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset
@@ -12,12 +12,10 @@ class HedgerDataset(Dataset):
         - information: (n_samples, >= n_steps , n_features)
         - payoff: (n_samples,)
     """
-    def __init__(self, 
-                 prices: Tensor,
-                 information: Tensor,
-                 payoff: Tensor):
+    def __init__(self, prices, info, payoff):
+        self.data = (prices, info, payoff)  # make it property
         self.prices = prices
-        self.information = information 
+        self.info = info
         self.payoff = payoff
         # TODO: check len(prices) == len(information) == len(payoff)
         # TODO: check shape
@@ -27,10 +25,10 @@ class HedgerDataset(Dataset):
         return len(self.prices) 
 
     def __getitem__(self, idx: int):
-        return [self.prices[idx], self.information[idx], self.payoff[idx]]
+        return [self.prices[idx], self.info[idx], self.payoff[idx]]
     
 
-class ManagerDataset(HedgerDataset):
+class ManagerDataset(Dataset):
     """Market information dataset.
     Args:
         - prices, information
@@ -40,13 +38,13 @@ class ManagerDataset(HedgerDataset):
     """
     def __init__(self, 
                  prices: Tensor,
-                 information: Tensor,
+                 info: Tensor,
                  ):
         self.prices = prices
-        self.information = information 
+        self.info = info
 
     def __len__(self):
         return len(self.prices)
 
     def __getitem__(self, idx: int):
-        return [self.prices[idx], self.information[idx]]
+        return [self.prices[idx], self.info[idx]]
