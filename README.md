@@ -1,2 +1,4 @@
 # neuralhedge
-A model-free implementation of deep hedging 
+Pytorch implementation of Deep Hedging, Utility Maximization and Portfolio Optimization.
+
+
