@@ -12,8 +12,8 @@ class BS_Market:
     For Portfolio Management, the option part is redundant
     '''
     def __init__(self,n_sample = 10000,
-                        n_timestep = 100,
-                        dt = 1/100,
+                        n_timestep = 30,
+                        dt = 1/30,
                         mu = 0.1,
                         sigma = 0.2,
                         r = 0.,
@@ -48,7 +48,7 @@ class BS_Market:
                                       strike = self.contigent.strike)
         
         
-    def get_hedge_ds(self):
+    def get_hedge_ds(self, payoff_zeros = False):
 
         stock_prices = self.bs.prices*self.init_price
 
@@ -60,8 +60,10 @@ class BS_Market:
         payoff = self.contigent.payoff(prices[:,-1,0])
 
         info = torch.cat([torch.log(prices[...,:1]),
-                        simulate_time(self.n_sample, self.dt, self.n_timestep, reverse = True)],dim=-1)
-        
+                        torch.sqrt(simulate_time(self.n_sample, self.dt, self.n_timestep, reverse = True))],dim=-1)
+        if payoff_zeros:
+            payoff *= 0
+
         data = (prices, info, payoff)
         hedge_ds = HedgerDataset(*data)
         return hedge_ds

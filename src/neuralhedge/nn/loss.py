@@ -6,8 +6,6 @@ from torch.nn import Module
 from torch.nn.parameter import Parameter
 import torch.nn.functional as F
 
-from abc import ABC, abstractmethod
-
 def proportional_cost(holding_diff, price_now) -> Tensor:
     cost = 0.001 * torch.abs(holding_diff) * price_now
     return cost
@@ -38,10 +36,9 @@ def expected_shortfall(input: Tensor, q: float = 0.01) -> Tensor:
     return ES
 
 
-class LossMeasure(ABC, Module):
-    @abstractmethod
-    def cash(self,input_T: Tensor) -> Tensor:
-        return torch.tensor(0.)
+class LossMeasure(Module):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
 class PowerMeasure(LossMeasure):
     @property
@@ -61,8 +58,6 @@ class PowerMeasure(LossMeasure):
         """
         input_T = input
         return  (F.relu(-input_T)**self.p).mean()**(1/self.p)/self.p
-    def cash(self):
-        return torch.tensor(0.)
 
 
 class EntropicRiskMeasure(LossMeasure):
@@ -85,7 +80,7 @@ class EntropicRiskMeasure(LossMeasure):
         input_T_min = input_T.min()
         return (-exp_utility(input_T - input_T_min, a=self.a).mean()).log() / self.a - input_T_min
 
-    def cash(self, input_T: Tensor) -> Tensor:
+    def optimal_omega(self, input_T: Tensor) -> Tensor:
         """
         input: (n_paths, n_steps+1, 1)
         f(X) = (1/a) * log(aE[exp(-aX)])
@@ -110,7 +105,7 @@ class SquareMeasure(LossMeasure):
         input_T = input
         return input_T.var()/2 - input_T.mean()
 
-    def cash(self, input: Tensor) -> Tensor:
+    def optimal_omega(self, input: Tensor) -> Tensor:
         """
         f(X) = -E[X]
         """
@@ -118,6 +113,7 @@ class SquareMeasure(LossMeasure):
         return -input_T.mean()
 
 class ExpectedShortfall(LossMeasure):
+    'q = 1-alpha'
     @property
     def q(self):
         return self._q
@@ -141,7 +137,7 @@ class ExpectedShortfall(LossMeasure):
         input_T = input
         return expected_shortfall(input_T, self.q)
 
-    def cash(self, input: Tensor) -> Tensor:
+    def optimal_omega(self, input: Tensor) -> Tensor:
         """
         f(X) = -VaR_q(X)
         """

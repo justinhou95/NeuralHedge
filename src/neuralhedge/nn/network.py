@@ -14,8 +14,8 @@ class NeuralNetSequential(Sequential):
     def __init__(
         self,
         n_output: int = 1,
-        n_layers: int = 4,
-        n_units: int = 32,
+        n_layers: int = 2,
+        n_units: int = 128,
         activation: Module = ReLU(),
     ):
         layers = []
@@ -23,7 +23,7 @@ class NeuralNetSequential(Sequential):
             layers.append(LazyLinear(n_units))
             layers.append(deepcopy(activation))
         layers.append(Linear(n_units, n_output))
-        layers.append(nn.Sigmoid())
+        # layers.append(nn.Sigmoid())
         super().__init__(*layers)
 
 

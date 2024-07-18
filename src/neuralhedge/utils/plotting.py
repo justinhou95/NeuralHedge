@@ -78,3 +78,26 @@ def plot_hedge_ds(ds, plot_samples = 100):
     plt.title('payoff')
     plt.grid()
     plt.show()
+
+
+def plot_strategy(strategy, ds_test, record_dir = ''):
+    observe_window = 3
+    n_timestep = ds_test.prices.shape[1]
+    observe_time = np.unique(np.arange(n_timestep)//observe_window) * observe_window
+
+    fig, axes = plt.subplots(3, len(observe_time)//3 + 1, figsize = [12,5],sharex=True, sharey=True, )
+    for i, t in enumerate(observe_time):
+        ax = axes.flatten()[i] # type: ignore
+        with torch.no_grad():
+            x = ds_test.prices[:,t,0]
+            y = strategy(ds_test.info[:,t,:])
+        ax.set_title(f't = {t:.2f}')
+        ax.scatter(x,y,s = 1)
+        ax.set_xticklabels([])
+
+    if record_dir:
+        file_path = pt.join(record_dir, "strategy.png")
+        fig.savefig(file_path)
+    else:
+        plt.show()
+    plt.close(fig)
