@@ -1,14 +1,10 @@
-from torch.nn import Module, Sequential
-from torch.nn import ReLU, Linear, LazyLinear
 from copy import deepcopy
 from typing import List
-from torch.nn import LazyLinear
-from torch.nn import Linear
-from torch.nn import Module
-from torch.nn import ReLU
-from torch.nn import Sequential
-from torch import nn
+
 import torch
+from torch import nn
+from torch.nn import LazyLinear, Linear, Module, ReLU, Sequential
+
 
 class NeuralNetSequential(Sequential):
     def __init__(
@@ -28,12 +24,14 @@ class NeuralNetSequential(Sequential):
 
 
 class SingleWeight(Module):
-    def __init__(self,) -> None:
+    def __init__(
+        self,
+    ) -> None:
         super().__init__()
         self.weight = torch.nn.Parameter(torch.randn(()))
-    def forward(self, x):
-        prop1 = torch.ones_like(x[...,:1]) * self.weight
-        prop2 = torch.ones_like(x[...,:1]) * (1-self.weight)
-        prop = torch.cat([prop1, prop2],dim = -1)
-        return prop
 
+    def forward(self, x):
+        prop1 = torch.ones_like(x[..., :1]) * self.weight
+        prop2 = torch.ones_like(x[..., :1]) * (1 - self.weight)
+        prop = torch.cat([prop1, prop2], dim=-1)
+        return prop

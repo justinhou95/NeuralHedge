@@ -1,10 +1,10 @@
+import torch
 
 from neuralhedge.data.base import HedgerDataset
 from neuralhedge.data.stochastic import BlackScholes, simulate_time
-import torch
-
 from neuralhedge.nn import blackschole, datahedger
 from neuralhedge.nn.contigent import EuropeanVanilla
+
 
 class BS_Market:
     '''

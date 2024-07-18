@@ -1,15 +1,14 @@
-from collections import defaultdict
-from turtle import forward
-from typing import List, Union
-from IPython import terminal
+
+from typing import List
+
 import torch
 from torch import Tensor
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
-from tqdm import tqdm
+
 from neuralhedge.nn.base import BaseModel
-from neuralhedge.nn.loss import EntropicRiskMeasure, LossMeasure, proportional_cost, no_cost, admissible_cost, log_utility
-from os import path as pt
+from neuralhedge.nn.loss import (EntropicRiskMeasure, LossMeasure,
+                                 admissible_cost, log_utility, no_cost,
+                                 proportional_cost)
+
 
 class Hedger(BaseModel):
 

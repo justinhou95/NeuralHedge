@@ -5,5 +5,10 @@
         "timestep"
     ],
     "python.analysis.typeCheckingMode": "basic",
-    "notebook.output.lineHeight": 22
+    "notebook.output.lineHeight": 22,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true
+      }
+    
 }
