@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neuralhedge"
-version = "0.0.3"
+version = "0.1.0"
 authors = [
   { name="Songyan Hou", email="justinhou95@gmail.com" },
 ]
@@ -28,8 +28,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["black", "isort", "pip-tools", "pytest"]
-exp = ["jupyter", "notebook"]
+dev = ["pytest", "black", "isort"]
+exp = ["jupyter", "notebook","seaborn"]
 
 
 

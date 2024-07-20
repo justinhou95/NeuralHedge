@@ -5,6 +5,5 @@ seaborn
 tqdm
 black
 isort
-flake8
 
 
