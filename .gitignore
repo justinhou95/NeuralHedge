@@ -1,13 +1,16 @@
 *.pyc 
 __pycache__/
-
+*.egg-info
 .ipynb_checkpoints
 
 .vscode/
-
+.tox/
+.pytest_cache/
 .venv/
 dist/
 
 .DS_Store
 
 cheatsheet
+
+pypi-AgENdGVzdC5weXBpLm9yZwIkZjQ0MTVlMjItMWE3Ny00MTIwLWFkZWYtMTZlNjM2OWI1YzY3AAITWzEsWyJuZXVyYWxoZWRnZSJdXQACLFsyLFsiMjkyYTVmYWItZGE1My00Y2QzLTgyMzYtNmMzZDY1MjNlMTg1Il1dAAAGILrDiIzf6u16sbQMG2G99LH44V9tfIm7_u9KABZ6Az3V

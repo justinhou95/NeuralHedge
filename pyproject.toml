@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neuralhedge"
+version = "0.0.3"
+authors = [
+  { name="Songyan Hou", email="justinhou95@gmail.com" },
+]
+description = "Pytorch implementation of Deep Hedging, Utility Maximization and Portfolio Optimization"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["feed", "reader", "tutorial"]
+
+requires-python = ">=3.8"
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "torch >= 2.0",
+    "tqdm >= 4.0",
+    "matplotlib >= 3.0"
+]
+
+[project.optional-dependencies]
+dev = ["black", "isort", "pip-tools", "pytest"]
+exp = ["jupyter", "notebook"]
+
+
+
+[project.urls]
+Homepage = "https://github.com/justinhou95/NeuralHedge"

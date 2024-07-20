@@ -3,4 +3,8 @@ jupyter
 notebook
 seaborn
 tqdm
+black
+isort
+flake8
+
 
