@@ -3,6 +3,7 @@ __pycache__/
 *.egg-info
 .ipynb_checkpoints
 
+
 .vscode/
 .tox/
 .pytest_cache/
@@ -12,3 +13,5 @@ dist/
 .DS_Store
 
 cheatsheet
+
+docs/_build

@@ -5,6 +5,10 @@ from torch.nn import LazyLinear, Linear, Module, ReLU, Sequential
 
 
 class NeuralNetSequential(Sequential):
+    r"""
+    Dense Network
+    """
+
     def __init__(
         self,
         n_output: int = 1,
@@ -22,6 +26,10 @@ class NeuralNetSequential(Sequential):
 
 
 class SingleWeight(Module):
+    r"""
+    Network output constant proportional strategy
+    """
+
     def __init__(
         self,
     ) -> None:

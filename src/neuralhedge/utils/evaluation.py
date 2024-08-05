@@ -6,6 +6,7 @@ import torch
 
 from neuralhedge.data.base import HedgerDataset, ManagerDataset
 from neuralhedge.nn import datahedger, loss, network
+from neuralhedge.nn.datamanager import Manager
 from neuralhedge.nn.loss import (
     EntropicRiskMeasure,
     ExpectedShortfall,
@@ -19,6 +20,10 @@ from neuralhedge.utils.plotting import plot_hedge, plot_history, plot_pnl, plot_
 def evaluate_bs_deep_hedge(
     hedger: datahedger.Hedger, ds: HedgerDataset, bs_price, record_dir: str = ""
 ):
+    r"""
+    Evaluate deep hedging under black scholes setting
+    """
+
     if record_dir:
         print(f"Save evaluation at: {record_dir}")
         makedirs(record_dir, exist_ok=True)
@@ -49,6 +54,9 @@ def evaluate_bs_efficient_hedge(
     init_wealth,
     record_dir: str = "",
 ):
+    r"""
+    Evaluate efficient hedging under black scholes setting
+    """
     if record_dir:
         print(f"Save evaluation at: {record_dir}")
         makedirs(record_dir, exist_ok=True)
@@ -77,15 +85,15 @@ def evaluate_bs_efficient_hedge(
     plot_strategy(hedger.strategy, ds, record_dir)
 
 
-from neuralhedge.nn.datamanager import Manager
-
-
 def evaluate_merton(
     hedger: Manager,
     ds: ManagerDataset,
     init_wealth,
     record_dir: str = "",
 ):
+    r"""
+    Evaluate merton problem
+    """
     if record_dir:
         print(f"Save evaluation at: {record_dir}")
         makedirs(record_dir, exist_ok=True)
@@ -108,6 +116,9 @@ def evaluate_mv(
     hedger: Manager,
     ds: ManagerDataset,
 ):
+    r"""
+    Evaluate mean variance portfolio optimization problem
+    """
     prices, info = ds.data
     with torch.no_grad():
         wealth = hedger.forward(prices, info)

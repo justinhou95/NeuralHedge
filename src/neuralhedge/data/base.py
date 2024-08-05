@@ -5,13 +5,21 @@ from torch.utils.data import Dataset
 
 
 class HedgerDataset(Dataset):
-    """Market information dataset.
+    r"""
+    Dataset contains data for hedging
+
     Args:
-        - prices, information, payoff
+        prices (:class:`torch.Tensor`)
+        information (:class:`torch.Tensor`)
+        payoff (:class:`torch.Tensor`)
     Shape:
         - prices: (n_samples, n_steps+1, n_assets)
         - information: (n_samples, >= n_steps , n_features)
-        - payoff: (n_samples,)
+        - payoff: (n_sample,)
+
+    Attributes:
+        data (:class:`tuple`): (prices, information, payoff)
+
     """
 
     def __init__(self, prices: Tensor, info: Tensor, payoff: Tensor):
@@ -21,6 +29,7 @@ class HedgerDataset(Dataset):
         self.payoff = payoff
         # TODO: check shape
         # TODO: check input type
+        # TODO: data from tuple to dict
 
     def __len__(self):
         return len(self.prices)
@@ -30,12 +39,19 @@ class HedgerDataset(Dataset):
 
 
 class ManagerDataset(Dataset):
-    """Market information dataset.
+    r"""
+    Dataset contains data for management
+
     Args:
-        - prices, information
+        prices (:class:`torch.Tensor`)
+        information (:class:`torch.Tensor`)
     Shape:
         - prices: (n_samples, n_steps+1, n_assets)
         - information: (n_samples, >= n_steps , n_features)
+
+    Attributes:
+        data (:class:`tuple`): (prices, information)
+
     """
 
     def __init__(

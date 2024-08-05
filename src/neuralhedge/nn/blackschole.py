@@ -9,6 +9,11 @@ from torch.nn import Module
 
 
 class BlackScholesPrice(Module):
+    r"""
+    Pricing kernel of BlackScholes model
+
+    """
+
     def __init__(
         self,
         sigma,
@@ -22,6 +27,13 @@ class BlackScholesPrice(Module):
         self.normal = Normal(0, 1)
 
     def forward(self, x):
+        r"""
+        Arguments:
+            x (:class:`torch.Tensor`): (log_price = x[..., 0], time_to_maturity = x[..., 1])
+
+        Returns:
+            bs_price (:class:`torch.Tensor`):
+        """
         log_price = x[..., 0]
         time_to_maturity = x[..., 1]
         price = log_price.exp()
@@ -34,10 +46,15 @@ class BlackScholesPrice(Module):
         output = price * self.normal.cdf(d1) - self.strike * self.normal.cdf(
             d2
         ) * torch.exp(-self.r * time_to_maturity)
-        return output[..., None]
+        bs_price = output[..., None]
+        return bs_price
 
 
 class BlackScholesDelta(Module):
+    r"""
+    Delta hedging Model
+    """
+
     def __init__(
         self,
         sigma,
@@ -51,6 +68,13 @@ class BlackScholesDelta(Module):
         self.normal = Normal(0, 1)
 
     def forward(self, x):
+        r"""
+        Arguments:
+            x (:class:`torch.Tensor`): (log_price = x[..., 0], time_to_maturity = x[..., 1])
+
+        Returns:
+            bs_delta (:class:`torch.Tensor`):
+        """
         log_price = x[..., 0]
         time_to_maturity = x[..., 1]
         d1 = (
@@ -58,10 +82,15 @@ class BlackScholesDelta(Module):
             - self.strike.log()
             + (self.r + self.sigma**2 / 2) * time_to_maturity
         ) / (self.sigma * time_to_maturity.sqrt())
-        return self.normal.cdf(d1)[..., None]
+        bs_delta = self.normal.cdf(d1)[..., None]
+        return bs_delta
 
 
 class BlackScholesAlpha(Module):
+    r"""
+    Merton problem Model
+    """
+
     def __init__(self, mu, sigma, r, alpha=None):
         super().__init__()
         self.mu = mu
@@ -73,6 +102,12 @@ class BlackScholesAlpha(Module):
             self.alpha = alpha
 
     def forward(self, x):
+        r"""
+        Returns:
+            prop (:class:`torch.Tensor`):
+        Shape:
+            prop: (n_sample, 2)
+        """
         prop1 = torch.ones_like(x[..., :1]) * self.alpha
         prop2 = torch.ones_like(x[..., :1]) * (1 - self.alpha)
         prop = torch.cat([prop1, prop2], dim=-1)
@@ -80,6 +115,10 @@ class BlackScholesAlpha(Module):
 
 
 class BlackScholesMeanVarianceAlpha(BlackScholesAlpha):
+    r"""
+    Mean Variance Model
+    """
+
     def __init__(self, mu, sigma, r, Wstar):
         super().__init__(mu, sigma, r)
         self.xi = (self.mu - self.r) / self.sigma
@@ -97,17 +136,33 @@ class BlackScholesMeanVarianceAlpha(BlackScholesAlpha):
         return alpha.view(-1, 1)
 
     def forward(self, x):
+        r"""
+        Returns:
+            prop (:class:`torch.Tensor`):
+        Shape:
+            prop: (n_sample, 2)
+        """
         alpha = self.compute_alpha(x)
         prop = torch.cat([alpha, 1 - alpha], dim=-1)
         return prop
 
 
 class BlackScholesMeanVarianceAlphaClip(BlackScholesMeanVarianceAlpha):
+    r"""
+    Mean Variance Clipped Model
+    """
+
     def __init__(self, mu, sigma, r, Wstar, clip):
         super().__init__(mu, sigma, r, Wstar)
         self.clip = clip
 
     def forward(self, x):
+        r"""
+        Returns:
+            prop (:class:`torch.Tensor`):
+        Shape:
+            prop: (n_sample, 2)
+        """
         alpha = self.compute_alpha(x)
 
         alpha = alpha * (alpha > 0)

@@ -1,10 +1,16 @@
 from os import path as pt
+from typing import Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from h11 import Data
 from torch import Tensor
+from torch.utils.data import Dataset
 
+import neuralhedge
+from neuralhedge.data.base import HedgerDataset, ManagerDataset
+from neuralhedge.nn.base import BaseModel
 from neuralhedge.nn.loss import EntropicRiskMeasure, SquareMeasure
 
 
@@ -13,6 +19,9 @@ def to_numpy(x: torch.Tensor):
 
 
 def plot_hedge(prices, terminal_wealth, payoff, init_wealth, record_dir=None):
+    r"""
+    Plot terminal prices v.s. terminal wealth and terminal prices v.s. payoff
+    """
 
     fig = plt.figure()
     plt.scatter(prices[:, -1, 0], terminal_wealth)
@@ -32,6 +41,9 @@ def plot_hedge(prices, terminal_wealth, payoff, init_wealth, record_dir=None):
 
 
 def plot_pnl(pnl, record_dir=None):
+    r"""
+    Plot PnL histogram
+    """
     fig = plt.figure()
     plt.hist(pnl, bins=100)
     plt.title("Profit-Loss Histograms")
@@ -46,7 +58,13 @@ def plot_pnl(pnl, record_dir=None):
     plt.close(fig)
 
 
-def plot_history(history, record_dir=None):
+def plot_history(history: dict, record_dir=None):
+    r"""
+    Plot training history
+    Arguments:
+        history (:class:`Dict`): loss is one key of history
+    """
+
     smooth_history = np.convolve(np.array(history["loss"]), np.ones(100) / 100, "valid")
     # smooth_history = history
     fig, ax = plt.subplots()
@@ -62,7 +80,10 @@ def plot_history(history, record_dir=None):
     plt.close(fig)
 
 
-def plot_hedge_ds(ds, plot_samples=100):
+def plot_hedge_ds(ds: HedgerDataset, plot_samples=100):
+    r"""
+    Print shape of paths, info and payoff. Plot paths and plot payoff
+    """
     paths, info, payoff = ds.data
     print("Shape of paths: ", paths.shape)
     print("Shape of information: ", info.shape)
@@ -83,7 +104,10 @@ def plot_hedge_ds(ds, plot_samples=100):
     plt.show()
 
 
-def plot_manage_ds(ds, plot_samples=100):
+def plot_manage_ds(ds: ManagerDataset, plot_samples=100):
+    r"""
+    Print shape of paths and info. Plot paths
+    """
     paths, info = ds.data
     print("Shape of paths: ", paths.shape)
     print("Shape of information: ", info.shape)
@@ -97,7 +121,11 @@ def plot_manage_ds(ds, plot_samples=100):
     plt.show()
 
 
-def plot_strategy(strategy, ds_test, record_dir=""):
+def plot_strategy(strategy: torch.nn.Module, ds_test: HedgerDataset, record_dir=""):
+    r"""
+    Plot strategy at different timestamps
+    """
+
     observe_window = 3
     n_timestep = ds_test.prices.shape[1]
     observe_time = np.unique(np.arange(n_timestep) // observe_window) * observe_window

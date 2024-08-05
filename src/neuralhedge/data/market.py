@@ -7,9 +7,26 @@ from neuralhedge.nn.contigent import EuropeanVanilla
 
 
 class BS_Market:
-    """
+    r"""
     Data of BS stock + Bond + European call option
-    For Portfolio Management, the option part is redundant
+
+    Args:
+        n_sample: number of samples
+        n_timestep: number of timestep
+        dt: :math:`dt`
+        mu: drift
+        sigma: volatility
+        r: risk-free rate
+        init_price: initial prices
+
+    Attributes:
+        bs (:class:`neuralhedge.data.stochastic.BlackScholes`):
+        contigent (:class:`neuralhedge.nn.contigent.EuropeanVanilla`):
+        bs_pricer (:class:`neuralhedge.nn.blackschole.BlackScholesPrice`):
+        bs_delta (:class:`neuralhedge.nn.blackschole.BlackScholesDelta`):
+        bs_price (:class:`float`): theoretical Black-Scholes price
+
+    For portfolio management, the option part e.g. payoff is redundant.
     """
 
     def __init__(
@@ -49,6 +66,13 @@ class BS_Market:
         )
 
     def get_hedge_ds(self):
+        r"""
+        Get dataset for hedging
+
+        Returns:
+            hedge_ds (:class:`neuralhedge.nn.HedgerDataset`)
+
+        """
         stock_prices = self.bs.get_prices() * self.init_price
         time = simulate_time(self.n_sample, self.dt, self.n_timestep, reverse=False)
         bond_prices = torch.exp(self.r * time) * self.init_price
@@ -68,6 +92,13 @@ class BS_Market:
         return hedge_ds
 
     def get_manage_ds(self):
+        r"""
+        Get dataset for managing
+
+        Returns:
+            manage_ds (:class:`neuralhedge.nn.ManagerDataset`)
+
+        """
         stock_prices = self.bs.get_prices() * self.init_price
         time = simulate_time(self.n_sample, self.dt, self.n_timestep, reverse=False)
         bond_prices = torch.exp(self.r * time) * self.init_price
@@ -85,30 +116,12 @@ class BS_Market:
         return manage_ds
 
     def get_price_delta(self):
+        r"""
+        Get dataset for managing
+
+        Returns:
+            bs_price, bs_delta (:class:`float`, :class:`~neuralhedge.nn.blackschole.BlackScholesDelta`)
+
+        """
+
         return self.bs_price, self.bs_delta
-
-
-# def stock_bond_market(mu = 0.1,
-#                       sigma = 0.2,
-#                       r = 0.01,
-#                       n_sample = 5000,
-#                       n_timestep = 60,
-#                       dt = 1/12):
-#     # Stock
-#     bs = BlackScholes(n_sample = n_sample,
-#                         n_timestep = n_timestep,
-#                         dt = dt,
-#                         mu = mu,
-#                         sigma = sigma)
-#     # Bond
-#     time = simulate_time(n_sample, dt, n_timestep, reverse = False)
-#     bond = torch.exp(r*time)
-#     # Prices
-#     prices = torch.cat([bs.prices, bond], dim = -1)
-#     # Information
-#     info1 = torch.log(prices)
-#     info2 = simulate_time(n_sample, dt, n_timestep, reverse = True)
-#     info = torch.cat([info1,
-#                 info2],
-#                 dim = -1)
-#     return prices, info

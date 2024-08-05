@@ -9,13 +9,21 @@ class EuropeanVanilla(Module):
         strike: float,
         call: bool = True,
     ):
+        r"""
+        EuropeanVanilla call option payoff
+        """
         super().__init__()
         self.call = call
         self.strike = strike
 
     def payoff(self, prices: Tensor) -> Tensor:
-        """Returns the terminal payoff of financial derivative
-        Shape: payoff: (n_sample, 1)
+        r"""
+        Arguments:
+            prices (:class:`torch.Tensor`):
+        Returns:
+            payoff (:class:`torch.Tensor`):
+        Shapes:
+            payoff: (n_sample, 1)
         """
         if self.call:
             payoff = F.relu(prices - self.strike)

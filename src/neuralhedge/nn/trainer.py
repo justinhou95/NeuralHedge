@@ -10,6 +10,11 @@ from neuralhedge.nn.base import BaseModel
 
 
 class Trainer(torch.nn.Module):
+    r"""
+    Trainer of loss
+
+    """
+
     def __init__(self, model: BaseModel) -> None:
         super().__init__()
         self.model = model
@@ -28,6 +33,10 @@ class Trainer(torch.nn.Module):
         lr_scheduler_gamma=1.0,
         lr=0.01,
     ):
+        r"""
+        Fitting with dataset
+        """
+
         self.steps = 1
 
         hedger_dl = DataLoader(

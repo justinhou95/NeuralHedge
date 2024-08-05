@@ -8,10 +8,11 @@ from neuralhedge.nn.loss import EntropicRiskMeasure, LossMeasure, admissible_cos
 
 
 class Hedger(BaseModel):
-    """Hedger to hedge with only data generated but not the generating class
-    Args:
-        - strategy (torch.nn.Module) or models (List[Module]): depending on independent neural network at each time step or the same neural network at each time
-        - risk (HedgeLoss)
+    r"""Hedger to hedge with data
+    Arguments:
+        strategy (:class:`torch.nn.Module`):
+        risk (:class:`neuralhedge.nn.loss.LossMeasure`):
+
     """
 
     def __init__(
@@ -22,7 +23,10 @@ class Hedger(BaseModel):
         self.strategy = strategy
         self.risk = risk
 
-    def forward(self, prices: Tensor, info: Tensor, init_wealth: Tensor):
+    def forward(self, prices: Tensor, info: Tensor, init_wealth: Tensor) -> Tensor:
+        r"""
+        Compute wealth process
+        """
 
         wealth0_dis_list = self.compute_wealth0_dis(prices, info)
         wealth0_dis = torch.cat(
@@ -34,8 +38,8 @@ class Hedger(BaseModel):
         wealth = wealth_dis * prices[:, :, -1]
         return wealth
 
-    def compute_wealth0_dis(self, prices, info):
-        """
+    def compute_wealth0_dis(self, prices: Tensor, info: Tensor) -> List[Tensor]:
+        r"""
         Compute the discounted wealth process
         """
         batch_size, n_timestep, n_asset = prices.shape
@@ -54,34 +58,49 @@ class Hedger(BaseModel):
         return wealth_dis
 
     def compute_info_t(self, info_dyn: Tensor, info: Tensor, t=None) -> Tensor:
+        r"""
+        Compute information to input the strategy at time t
+        """
         # all_info_t = torch.cat(
         #         [info[:, t, :], info_dyn[:,t,:]],
         #         dim=-1)
         all_info_t = info[:, t, :]
         return all_info_t
 
-    def compute_holding_stock_tplus1(
-        self, all_info_t: Tensor, t=None
-    ) -> Tensor:  # We might use t here if it is deep hedge
+    def compute_holding_stock_tplus1(self, all_info_t: Tensor, t=None) -> Tensor:
+        r"""
+        Compute the holding of risky asset
+        """
+
+        # We might use t here if it is deep hedge
         holding_stock_tplus1 = self.strategy(all_info_t)
         return holding_stock_tplus1
 
     def compute_pnl(
         self, prices: Tensor, info: Tensor, init_wealth: Tensor, payoff: Tensor
     ):
+        r"""
+        Compute profit and loss, after deducting payoff
+        """
         wealth = self.forward(prices, info, init_wealth)
         terminal_wealth = wealth[:, -1]
         pnl = terminal_wealth - payoff
         return pnl
 
-    def compute_loss(self, input: List[Tensor]):
+    def compute_loss(self, input: List[Tensor]) -> Tensor:
+        r"""
+        Compute loss for training
+        """
         prices, info, payoff = input
         init_wealth = torch.tensor(0.0)
         pnl = self.compute_pnl(prices, info, init_wealth, payoff)
         loss = self.risk(pnl)
         return loss
 
-    def pricer(self, input):
+    def pricer(self, input) -> Tensor:
+        r"""
+        Pricing with risk cash
+        """
         prices, info, payoff = input
         with torch.no_grad():
             init_wealth = torch.tensor(0.0)
@@ -91,6 +110,14 @@ class Hedger(BaseModel):
 
 
 class EfficientHedger(Hedger):
+    r"""Efficient Hedger to hedge with data
+    Arguments:
+        strategy (:class:`torch.nn.Module`):
+        risk (:class:`neuralhedge.nn.loss.LossMeasure`):
+        init_wealth (:class:`torch.Tensor`):
+        ad_bound (:class:`float`): admissibility bound to penalize
+    """
+
     def __init__(
         self,
         strategy: torch.nn.Module,
@@ -102,7 +129,10 @@ class EfficientHedger(Hedger):
         self.init_wealth = init_wealth
         self.ad_bound = ad_bound
 
-    def compute_loss(self, input: List[Tensor]):
+    def compute_loss(self, input: List[Tensor]) -> Tensor:
+        r"""
+        Compute loss for training
+        """
         prices, info, payoff = input
         init_wealth = self.init_wealth
         wealth = self.forward(prices, info, init_wealth)
