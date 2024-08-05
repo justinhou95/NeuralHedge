@@ -1,0 +1,13 @@
+neuralhedge.nn.network
+======================
+
+.. automodule:: neuralhedge.nn.network
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      NeuralNetSequential
+      SingleWeight
+   

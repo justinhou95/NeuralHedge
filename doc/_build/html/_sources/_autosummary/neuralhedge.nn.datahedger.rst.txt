@@ -1,0 +1,13 @@
+neuralhedge.nn.datahedger
+=========================
+
+.. automodule:: neuralhedge.nn.datahedger
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      EfficientHedger
+      Hedger
+   

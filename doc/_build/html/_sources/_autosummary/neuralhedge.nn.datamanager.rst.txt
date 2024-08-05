@@ -1,0 +1,13 @@
+neuralhedge.nn.datamanager
+==========================
+
+.. automodule:: neuralhedge.nn.datamanager
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Manager
+      WealthManager
+   
