@@ -14,7 +14,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install sphinx sphinx_rtd_theme myst_parser
-          pip install neuralhedge
       - name: Sphinx build
         run: |
           sphinx-apidoc -o docs/api src/neuralhedge
