@@ -1,0 +1,13 @@
+neuralhedge.data.base
+=====================
+
+.. automodule:: neuralhedge.data.base
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      HedgerDataset
+      ManagerDataset
+   

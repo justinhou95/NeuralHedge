@@ -1,0 +1,8 @@
+Models
+===========
+
+.. autosummary::
+   :toctree: _autosummary
+   :recursive:
+
+   neuralhedge

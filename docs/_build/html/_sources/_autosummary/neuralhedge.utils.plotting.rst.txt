@@ -1,0 +1,18 @@
+neuralhedge.utils.plotting
+==========================
+
+.. automodule:: neuralhedge.utils.plotting
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      plot_hedge
+      plot_hedge_ds
+      plot_history
+      plot_manage_ds
+      plot_pnl
+      plot_strategy
+      to_numpy
+   

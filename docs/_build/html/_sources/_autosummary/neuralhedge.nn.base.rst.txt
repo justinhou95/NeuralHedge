@@ -1,0 +1,12 @@
+neuralhedge.nn.base
+===================
+
+.. automodule:: neuralhedge.nn.base
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      BaseModel
+   

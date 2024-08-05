@@ -1,0 +1,20 @@
+neuralhedge.data.stochastic
+===========================
+
+.. automodule:: neuralhedge.data.stochastic
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      simulate_BM
+      simulate_BS
+      simulate_time
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      BlackScholes
+   

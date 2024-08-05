@@ -1,0 +1,15 @@
+﻿neuralhedge
+===========
+
+.. automodule:: neuralhedge
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   data
+   nn
+   utils
