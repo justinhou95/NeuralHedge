@@ -1,9 +1,0 @@
-Usage
-=====
-
-Installation
-------------
-
-
-
-.. _here:

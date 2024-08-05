@@ -1,6 +1,0 @@
-﻿neuralhedge.nn
-==============
-
-.. automodule:: neuralhedge.nn
-
-   
