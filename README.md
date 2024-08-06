@@ -1,6 +1,7 @@
 # neuralhedge 📈
 This library implements PyTorch realization of Hedging, Utility Maximization and Portfolio Optimization with neural networks. In particular it is made up of fully data-driven neural solver, where you could input your own data. The strategy, model and solver class are fully decoupled, making it very easy to implement your personalized problem. This implementation is very light weighted and essentially only relies on PyTorch for convenient future maintenance.
 
+[documentation](https://justinhou95.github.io/NeuralHedge/)
 
 ## Installation 📦
 
