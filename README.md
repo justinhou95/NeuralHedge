@@ -1,5 +1,5 @@
 # neuralhedge 📈
-This library implements PyTorch realization of Hedging, Utility Maximization and Portfolio Optimization with neural networks. In particular it is made up of fully data-driven neural solver, where you could input your own data. The strategy, model and solver class are fully decoupled, making it very easy to implement your personalized problem. This implementation is very light weighted and essentially only relies on PyTorch for convenient future maintenance.
+This library implements PyTorch realization of [Deep hedging](deep-hedging-qf), Utility Maximization and Portfolio Optimization with neural networks. In particular it is made up of fully data-driven neural solver, where you could input your own data. The strategy, model and solver class are fully decoupled, making it very easy to implement your personalized problem. This implementation is very light weighted and essentially only relies on PyTorch for convenient future maintenance.
 
 
 ## Installation 📦
@@ -42,3 +42,12 @@ If you are experiencing any issues while running the code or request new feature
 
 ## Contributing 🚀
 You want to contribute to this library, that will be cool!
+
+
+## References
+
+* [Deep hedging](deep-hedging-qf)
+* [Tensorflow implementation for Deep Hedging](https://github.com/hansbuehler/deephedging)
+* [PFHedge](https://github.com/pfnet-research/pfhedge)
+
+[deep-hedging-qf]: https://www.tandfonline.com/doi/abs/10.1080/14697688.2019.1571683
